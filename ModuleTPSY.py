@@ -1,5 +1,8 @@
 import tkinter as tk
 from tkinter import messagebox
+from serial import Serial
+from time import sleep
+s = Serial("COM4",9600, timeout=0.05)
 
 class User:
     def __init__(self,username, creationdate) -> None:
@@ -11,6 +14,7 @@ class User:
     
     def listUserDiplay(self):
         return f"{self.username}"
+
 
 class UserInterface(tk.Tk):
     def __init__(self, root):
@@ -40,6 +44,8 @@ class UserInterface(tk.Tk):
     def btn_turn_on_click(self):
         self.bouton_desactiver.configure(state="normal")
         self.bouton_activer.configure(state="disabled")
+        s.write(b"START\n")
+                
 
     def btn_turn_off_click(self):
         self.bouton_desactiver.configure(state="disabled")
@@ -49,7 +55,12 @@ class UserInterface(tk.Tk):
         print("test")
 
     def btn_register_click(self):
-        username = "test"
+        while True:
+            data_in = s.readline()
+            msg = str(data_in)[2:-5]
+            if(msg != ""):
+                print(msg)
+                break
     
 if __name__ == "__main__":
     root = tk.Tk()
