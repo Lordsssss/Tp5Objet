@@ -3,7 +3,7 @@ from tkinter import messagebox
 from serial import Serial
 from time import sleep
 s = Serial("COM4",9600, timeout=0.05)
-
+open_loop = False
 class User:
     def __init__(self,username, creationdate) -> None:
         self.username = username
@@ -45,16 +45,26 @@ class UserInterface(tk.Tk):
         self.bouton_desactiver.configure(state="normal")
         self.bouton_activer.configure(state="disabled")
         s.write(b"START\n")
-                
-
+        open_loop = True
+        
+        while open_loop:
+            data_in = s.readline()
+            msg = str(data_in)[2:-5]
+            if(msg != ""):
+                print(msg)
+                s.write(b"VALIDE\n")
+                break
+            
     def btn_turn_off_click(self):
         self.bouton_desactiver.configure(state="disabled")
         self.bouton_activer.configure(state="normal")
+        open_loop = False
 
     def load_users_from_file(self):
         print("test")
 
     def btn_register_click(self):
+        s.write(b"REGISTER\n")
         while True:
             data_in = s.readline()
             msg = str(data_in)[2:-5]

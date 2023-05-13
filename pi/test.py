@@ -36,7 +36,19 @@ def wrong_nfc():
     sleep(2)
     ledRouge.value(0)
 
-            
+def open_loop():
+    reader.init()
+    (stat, tag_type) = reader.request(reader.REQIDL)
+    if stat == reader.OK:
+        (stat, uid) = reader.SelectTagSN()
+    if stat == reader.OK:
+        card = int.from_bytes(bytes(uid),"little",False) # type: ignore
+        print(str(card))
+        sleep(1)
+        if(rep.lower() == "valide"):
+            open_lock()
+        else:
+            wrong_nfc()
 def register():
     while True:
         ledVert.value(1)
@@ -66,11 +78,12 @@ _thread.start_new_thread(lectureHote, ())
 try:
     while True:
         if rep.lower() == "start":
-            register() 
+            while rep.lower() == "start":
+                open_loop() 
         elif rep.lower == "stop":
             print("test")
         elif rep.lower() == "register":
-            print("test")
+            register() 
 
 except KeyboardInterrupt:
     terminateThread = True
