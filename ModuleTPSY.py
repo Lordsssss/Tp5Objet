@@ -2,8 +2,13 @@ import tkinter as tk
 from tkinter import messagebox
 from serial import Serial
 from time import sleep
+import _thread
+import sys
+
 s = Serial("COM4",9600, timeout=0.05)
-open_loop = False
+terminateThread = False
+
+
 class User:
     def __init__(self,username, creationdate) -> None:
         self.username = username
@@ -18,6 +23,7 @@ class User:
 
 class UserInterface(tk.Tk):
     def __init__(self, root):
+        
         self.root = root
         self.root.title("User System")
         self.root.geometry("500x500")
@@ -40,25 +46,45 @@ class UserInterface(tk.Tk):
         self.bouton_register.pack(pady=10)
 
         self.load_users_from_file()
-
-    def btn_turn_on_click(self):
-        self.bouton_desactiver.configure(state="normal")
-        self.bouton_activer.configure(state="disabled")
-        s.write(b"START\n")
-        open_loop = True
         
-        while open_loop:
+    def contains_open(self,s):
+        return 'OPEN' in s.upper()
+
+    def remove_open(self,s):
+        return s.replace('OPEN', '').replace('open', '')
+    
+    def open_lock(self):
+        global terminateThread
+        while True:
+            if terminateThread:
+                print("test")
+                break
+            #lecture de commande de l'hôte
             data_in = s.readline()
             msg = str(data_in)[2:-5]
-            if(msg != ""):
+            if(msg != "" and 'OPEN' in msg):
                 print(msg)
+                code = msg.replace('OPEN','')
+                print(code)
                 s.write(b"VALIDE\n")
-                break
+                sleep(1)
+                s.write(b"START\n")
+        
+    def btn_turn_on_click(self):
+        global terminateThread
+        self.bouton_desactiver.configure(state="normal")
+        self.bouton_activer.configure(state="disabled")
+        terminateThread = False
+        s.write(b"START\n")
+        _thread.start_new_thread(self.open_lock, ())
             
     def btn_turn_off_click(self):
         self.bouton_desactiver.configure(state="disabled")
         self.bouton_activer.configure(state="normal")
-        open_loop = False
+        global terminateThread 
+        terminateThread = True
+        
+        
 
     def load_users_from_file(self):
         print("test")
@@ -68,8 +94,9 @@ class UserInterface(tk.Tk):
         while True:
             data_in = s.readline()
             msg = str(data_in)[2:-5]
-            if(msg != ""):
-                print(msg)
+            if(msg != "" and 'REGISTER' in msg):
+                code = msg.replace('REGISTER','')
+                print(code)
                 break
     
 if __name__ == "__main__":

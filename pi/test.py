@@ -43,7 +43,7 @@ def open_loop():
         (stat, uid) = reader.SelectTagSN()
     if stat == reader.OK:
         card = int.from_bytes(bytes(uid),"little",False) # type: ignore
-        print(str(card))
+        print('OPEN'+str(card))
         sleep(1)
         if(rep.lower() == "valide"):
             open_lock()
@@ -58,7 +58,7 @@ def register():
             (stat, uid) = reader.SelectTagSN()
         if stat == reader.OK:
             card = int.from_bytes(bytes(uid),"little",False) # type: ignore
-            print(str(card))
+            print('REGISTER'+str(card))
             ledVert.value(0)
             break
           
