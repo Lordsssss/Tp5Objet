@@ -22,7 +22,7 @@ rep = "" # Message envoyer vers l'hoteà
 def open_lock():
     lock.value(1)
     ledVert.value(1)
-    buzzer.duty_u16(1500)
+    buzzer.duty_u16(500)
     sleep(4)
     lock.value(0)
     ledVert.value(0)
