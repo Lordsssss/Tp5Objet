@@ -7,7 +7,32 @@ import sys
 import sqlite3
 
 
-s = Serial("COM4",9600, timeout=0.05)
+try:
+    connexion = sqlite3.connect("database.sqlite")
+    curs = connexion.cursor
+    
+    table = """CREATE TABLE USER(
+            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            nfcId INTEGER,
+            username TEXT NOT NULL,
+            creationDate TEXT NOT NULL,
+            description TEXT NOT NULL );"""     
+
+    query = """INSERT INTO USER (nfcId,username,creationDate,description) VALUES (1234,"HUGO","test","test");"""
+    connexion.execute(query)
+    connexion.commit()
+    connexion.close
+    print("Skill issue")
+    
+    print("creation table")
+except sqlite3.Error as error:
+    print(error)
+finally:
+    if connexion:
+        connexion.close
+        
+
+s = Serial("COM7",9600, timeout=0.05)
 terminateThread = False
 
 try:
@@ -17,8 +42,8 @@ except sqlite3.Error as error:
             print(error)
 
 class User:
-    def __init__(self,id, username, nfcId, creationdate, description) -> None:
-        self.id = id
+    def __init__(self,nfcid, username, creationdate, description) -> None:
+        self.nfcid = nfcid
         self.username = username
         self.nfcId = nfcId
         self.creationdate = creationdate
@@ -67,7 +92,6 @@ class UserInterface(tk.Tk):
     
     def contains_open(self,s):
         return 'OPEN' in s.upper()
-
     def remove_open(self,s):
         return s.replace('OPEN', '').replace('open', '')
     
