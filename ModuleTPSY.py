@@ -3,121 +3,12 @@ from tkinter import messagebox
 from serial import Serial
 from time import sleep
 import _thread
-import sys
-import sqlite3
+import gestionnaireDB as db
+from datetime import datetime
 
-dbName = "database.db"
-
-
-def connexionDB():
-    global connexion
-    try:
-        connexion = sqlite3.connect(dbName)
-    except sqlite3.Error as error:
-        print("connexion error",error)
-
-def fermetureDB():
-    if connexion:
-        connexion.close()
-    else:
-        print("error fermeture")
-
-def verifierExisteTable(table):
-    existe = False
-    cur = connexion.cursor()
-    
-    sql_tableExiste = "SELECT count(name) "\
-                      "FROM sqlite_master"\
-                      "WHERE TYPE='table' AND name='" + table +"'"
-    
-    try:
-        cur.execute(sql_tableExiste)
-        
-        if cur.fetchone()[0]==1:
-            existe = True
-        else:
-            existe = False
-    except sqlite3.Error as error:
-        print("database table check",error)
-    
-    return existe
-
-def creationTable():
-    table = """CREATE TABLE USER(
-            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-            nfcId INTEGER,
-            username TEXT NOT NULL,
-            creationDate TEXT NOT NULL,
-            description TEXT NOT NULL );"""
-    
-    connexionDB()
-    
-    if verifierExisteTable("USER"):
-        print("table existe deja")
-    else:
-        try:
-            connexion.execute(table)
-        except sqlite3.Error as error:
-            print("creation table ",error)
-    
-    fermetureDB()
-
-def ajouterUser(nfcId,username,creationData,description):
-    sql_insert = "INSERT INTO USER (nfcId,username,creationDate,description) VALUES(?,?,?,?)"
-    
-    connexionDB()
-    
-    try:
-        cur_insert = connexion.cursor()
-        donnees_param = (nfcId,username,creationData,description)
-        cur_insert.execute(sql_insert,donnees_param)
-        connexion.commit()
-        cur_insert.close()
-    except sqlite3.Error as error:
-        print("insert error", error)
-    finally:
-        fermetureDB()
-
-def selectionListeUser():
-    slq_select = "SELECT username FROM USER"
-    
-    connexionDB()
-    try:
-        cur_select = connexion.cursor()
-        cur_select.execute(slq_select)
-        data = cur_select.fetchall()
-    except sqlite3.Error as error:
-        print("selection error",error)
-    finally:
-        fermetureDB()
-    return data
-
-def verifierNfcId(nfcId):
-    sql_select = "SELECT 1 FROM USER WHERE nfcId=? LIMIT 1"
-    
-    connexionDB()
-    
-    try:
-        cur_select = connexion.cursor()
-        cur_select.execute(sql_select, (nfcId,))
-        data = cur_select.fetchone()
-        if data is None:
-            return False
-        else:
-            return True
-    except sqlite3.Error as error:
-        print("verification error", error)
-    finally:
-        fermetureDB()
-        
-s = Serial("COM7",9600, timeout=0.05)
+s = Serial("COM4",9600, timeout=0.05)
 terminateThread = False
 
-try:
-    connextion = sqlite3.connect("database.db")
-    curs = connextion.cursor
-except sqlite3.Error as error:
-            print(error)
 
 class User:
     def __init__(self,nfcid, username, creationdate, description) -> None:
@@ -153,19 +44,14 @@ class UserInterface(tk.Tk):
         self.liste_users = tk.Listbox(self.root, height=10,width=60 )
         self.liste_users.pack(pady=5)
 
+        self.label_username = tk.Label(self.root, text="Le nom d'utilisateur")
+        self.label_username.pack(pady=5)
+        self.entree_username = tk.Entry(self.root, width=10)
+        self.entree_username.pack(pady=5)
+        
         self.bouton_register = tk.Button(self.root, text="Register")
         self.bouton_register["command"] = self.btn_register_click
         self.bouton_register.pack(pady=10)
-
-        self.load_users_from_file()
-
-    def create_user(self):
-        try:
-            connextion = sqlite3.connect("database.db")
-            curs = connextion.cursor
-        except sqlite3.Error as error:
-            print(error)
-    
     
     def contains_open(self,s):
         return 'OPEN' in s.upper()
@@ -176,7 +62,6 @@ class UserInterface(tk.Tk):
         global terminateThread
         while True:
             if terminateThread:
-                print("test")
                 break
             #lecture de commande de l'hôte
             data_in = s.readline()
@@ -185,7 +70,10 @@ class UserInterface(tk.Tk):
                 print(msg)
                 code = msg.replace('OPEN','')
                 print(code)
-                s.write(b"VALIDE\n")
+                if db.verifierNfcId(code):
+                    s.write(b"VALIDE\n")
+                else:
+                    s.write(b"INVALIDE\n")
                 sleep(1)
                 s.write(b"START\n")
         
@@ -202,23 +90,36 @@ class UserInterface(tk.Tk):
         self.bouton_activer.configure(state="normal")
         global terminateThread 
         terminateThread = True
-        
-        
-
-    def load_users_from_file(self):
-        print("test")
-
+        s.write(b"STOP\n")
+    
+    def register_card(self):
+        while True:
+                data_in = s.readline()
+                msg = str(data_in)[2:-5]
+                print("message",msg)
+                if(msg != "" and 'REGISTER' in msg):
+                    code = msg.replace('REGISTER','')
+                    print(code)
+                    user = User(code,self.entree_username.get(),datetime.now(),"Compte utilisateur")
+                    db.ajouterUser(user.nfcid,user.username,user.creationdate,user.description)
+                    messagebox.showinfo("Bravo !","Le compte a été créer !")
+                    break
+    
     def btn_register_click(self):
         s.write(b"REGISTER\n")
-        while True:
-            data_in = s.readline()
-            msg = str(data_in)[2:-5]
-            if(msg != "" and 'REGISTER' in msg):
-                code = msg.replace('REGISTER','')
-                print(code)
-                break
-    
+        if self.entree_username.get() == "":
+            messagebox.showerror("Error","Vous n'avez pas entrer la description")
+        else:
+            self.bouton_desactiver.configure(state="disabled")
+            self.bouton_activer.configure(state="normal")
+            global terminateThread 
+            terminateThread = True
+            self.register_card()
+            messagebox.showwarning("Restart","L'application va se fermer")
+            root.destroy()
+            
 if __name__ == "__main__":
+    db.creationTable()
     root = tk.Tk()
     app = UserInterface(root)
     root.mainloop()

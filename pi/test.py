@@ -21,7 +21,7 @@ rep = "" # Message envoyer vers l'hoteà
 def open_lock():
     lock.value(1)
     ledVert.value(1)
-    buzzer.duty_u16(500)
+    buzzer.duty_u16(1500)
     sleep(4)
     lock.value(0)
     ledVert.value(0)
@@ -48,6 +48,7 @@ def open_loop():
             open_lock()
         else:
             wrong_nfc()
+            
 def register():
     while True:
         ledVert.value(1)
@@ -78,7 +79,7 @@ try:
             while rep.lower() == "start":
                 open_loop() 
         elif rep.lower == "stop":
-            print("test")
+            rien = True
         elif rep.lower() == "register":
             register() 
 
