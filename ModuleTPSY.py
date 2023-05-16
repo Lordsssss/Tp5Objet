@@ -4,18 +4,28 @@ from serial import Serial
 from time import sleep
 import _thread
 import sys
+import sqlite3
+
 
 s = Serial("COM4",9600, timeout=0.05)
 terminateThread = False
 
+try:
+    connextion = sqlite3.connect("database.db")
+    curs = connextion.cursor
+except sqlite3.Error as error:
+            print(error)
 
 class User:
-    def __init__(self,username, creationdate) -> None:
+    def __init__(self,id, username, nfcId, creationdate, description) -> None:
+        self.id = id
         self.username = username
+        self.nfcId = nfcId
         self.creationdate = creationdate
+        self.description = description
 
     def __repr__(self):
-        return f"{self.username} - {self.creationdate}"
+        return f"{self.username} - {self.nfcId} - {self.creationdate}"
     
     def listUserDiplay(self):
         return f"{self.username}"
@@ -46,7 +56,15 @@ class UserInterface(tk.Tk):
         self.bouton_register.pack(pady=10)
 
         self.load_users_from_file()
-        
+
+    def create_user(self):
+        try:
+            connextion = sqlite3.connect("database.db")
+            curs = connextion.cursor
+        except sqlite3.Error as error:
+            print(error)
+    
+    
     def contains_open(self,s):
         return 'OPEN' in s.upper()
 

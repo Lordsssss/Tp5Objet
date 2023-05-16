@@ -5,7 +5,6 @@ from I2C_LCD import I2CLcd
 import sys
 import _thread
 
-
 reader = MFRC522(spi_id=0,sck=6,miso=4,mosi=7,cs=5,rst=22)
 lock = Pin(15, Pin.OUT)
 buzzer = PWM(Pin(16))
@@ -72,8 +71,6 @@ def lectureHote():
 
 #démarrage du thread pour la lecture 
 _thread.start_new_thread(lectureHote, ())
-
-
 
 try:
     while True:
