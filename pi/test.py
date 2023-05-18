@@ -21,19 +21,24 @@ rep = "" # Message envoyer vers l'hoteà
 def open_lock():
     lock.value(1)
     ledVert.value(1)
-    buzzer.duty_u16(1500)
+    buzzer.duty_u16(500)
+    lcd.putstr("Porte ouverte")
     sleep(4)
     lock.value(0)
     ledVert.value(0)
     buzzer.duty_u16(0)
+    lcd.clear()
 
+    
 def wrong_nfc():
     ledRouge.value(1)
-    buzzer.duty_u16(1500)
+    buzzer.duty_u16(500)
+    lcd.putstr("Accès refuser")
     sleep(1)
     buzzer.duty_u16(0)
     sleep(2)
     ledRouge.value(0)
+    lcd.clear()
 
 def open_loop():
     reader.init()
@@ -57,9 +62,12 @@ def register():
         if stat == reader.OK:
             (stat, uid) = reader.SelectTagSN()
         if stat == reader.OK:
+            lcd.putstr("Vous avez été enregistrer")
             card = int.from_bytes(bytes(uid),"little",False) # type: ignore
             print('REGISTER'+str(card))
             ledVert.value(0)
+            sleep(2)
+            lcd.clear()
             break
           
 def lectureHote():
