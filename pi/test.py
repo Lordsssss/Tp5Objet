@@ -71,7 +71,7 @@ def register():
             break
           
 def lectureHote():
-    global terminateThread, rep
+    global terminateThread, rep 
     while True:
         if terminateThread:
             break
